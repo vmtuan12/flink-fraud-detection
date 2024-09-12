@@ -1,0 +1,16 @@
+{
+    "transaction": {
+        "id": 1,
+        "user_id": 2,
+        "receiver": 10,
+        "amount": 100.15,
+        "created_at": 1726156083,
+        "card_type": "GREEN"
+    },
+    "rule": {
+        "type": "MAX",
+        "amount": 100.15,
+        "duration": 86400,
+        "card_type": "GREEN"
+    }
+}
