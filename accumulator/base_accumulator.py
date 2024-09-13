@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 
-class Accumulator(ABC):
+class BaseAccumulator(ABC):
     @abstractmethod
-    def add(value):
+    def add(self, value):
         pass
 
     @abstractmethod
-    def get_local_value(value):
+    def get_local_value(self):
         pass
 
     @abstractmethod
-    def reset_local_value(value):
+    def reset_local_value(self):
         pass
