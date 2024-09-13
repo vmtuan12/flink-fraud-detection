@@ -1,6 +1,6 @@
 from accumulator.base_accumulator import BaseAccumulator
 
-class AvgAccumulator(BaseAccumulator):
+class SumAccumulator(BaseAccumulator):
     def __init__(self) -> None:
         super().__init__()
         self.sum = 0.00
@@ -13,3 +13,9 @@ class AvgAccumulator(BaseAccumulator):
 
     def reset_local_value(self):
         self.sum = 0
+
+    def check_rule(self, comparison_value) -> bool:
+        if self.get_local_value() >= comparison_value:
+            return True
+        
+        return False

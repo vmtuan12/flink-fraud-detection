@@ -13,3 +13,9 @@ class MaxAccumulator(BaseAccumulator):
 
     def reset_local_value(self):
         self.max = 0
+
+    def check_rule(self, comparison_value) -> bool:
+        if self.get_local_value() >= comparison_value:
+            return True
+        
+        return False

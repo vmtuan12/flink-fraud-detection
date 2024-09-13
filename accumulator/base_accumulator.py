@@ -12,3 +12,7 @@ class BaseAccumulator(ABC):
     @abstractmethod
     def reset_local_value(self):
         pass
+
+    @abstractmethod
+    def check_rule(self, comparison_value) -> bool:
+        pass

@@ -16,3 +16,9 @@ class AvgAccumulator(BaseAccumulator):
     def reset_local_value(self):
         self.count = 0
         self.sum = 0
+
+    def check_rule(self, comparison_value) -> bool:
+        if self.get_local_value() >= comparison_value:
+            return True
+        
+        return False
