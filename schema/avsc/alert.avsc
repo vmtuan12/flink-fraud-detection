@@ -1,0 +1,12 @@
+{
+    "namespace": "fraud.alert",
+    "type": "record",
+    "name": "Alert",
+    "fields": [
+        {"name": "user_id",  "type": "int", "doc": "user id"},
+        {"name": "card_type", "type": "string", "doc": "name of card type"},
+        {"name": "window_type", "type": "int", "doc": "window aggregation type"},
+        {"name": "message", "type": "float", "doc": "alert message"},
+        {"name": "alerted_at", "type": "int", "doc": "alert created timestamp in second"}
+    ]
+}

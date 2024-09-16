@@ -1,14 +1,14 @@
 from pyflink.datastream.connectors.kafka import KafkaOffsetsInitializer, KafkaSource
-from pyflink.common.typeinfo import Types, TypeInformation
-from pyflink.datastream.formats.json import JsonRowDeserializationSchema, JsonRowSerializationSchema
-from pyflink.datastream import StreamExecutionEnvironment, RuntimeContext, KeyedBroadcastProcessFunction
+from pyflink.common.typeinfo import Types
+from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.common import WatermarkStrategy
-from pyflink.datastream.connectors.kafka import KafkaSink, KafkaRecordSerializationSchema, DeliveryGuarantee, KafkaOffsetResetStrategy
+from pyflink.datastream.connectors.kafka import KafkaOffsetResetStrategy, KafkaSink, KafkaRecordSerializationSchema, DeliveryGuarantee
 from pyflink.datastream.state import MapStateDescriptor
 from pyflink.common.time import Duration
 from dotenv import load_dotenv
 import os
 from functions.functions import FraudProcessFunction
+from schema.schema_controller import SchemaControl, SerializationType, RULE_TYPE_INFO
 
 load_dotenv()
 
@@ -19,19 +19,12 @@ env.set_parallelism(1)
 env.enable_checkpointing(interval=2000)
 env.set_python_executable("/home/mhtuan/anaconda3/envs/flink-env/bin/python")
 
-transaction_type_info = Types.ROW_NAMED(["id", "user_id", "receiver", "amount", "created_at", "card_type"], [Types.INT(), Types.INT(), Types.INT(), Types.FLOAT(), Types.INT(), Types.STRING()])
-rule_type_info = Types.ROW_NAMED(["type", "amount", "duration", "card_type"], [Types.STRING(), Types.FLOAT(), Types.INT(), Types.STRING()])
-transaction_deserialization_schema = JsonRowDeserializationSchema.builder().type_info(
-                             type_info=transaction_type_info).build()
-rule_deserialization_schema = JsonRowDeserializationSchema.builder().type_info(
-                             type_info=rule_type_info).build()
-
 transaction_source = KafkaSource.builder() \
         .set_bootstrap_servers(f"{kafka_host}:9091,{kafka_host}:9092,{kafka_host}:9093") \
         .set_topics("fraud.transaction") \
         .set_group_id("flink-2") \
         .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.LATEST)) \
-        .set_value_only_deserializer(transaction_deserialization_schema) \
+        .set_value_only_deserializer(SchemaControl.get_transaction_deserialization()) \
         .build()
 
 rule_source = KafkaSource.builder() \
@@ -39,7 +32,7 @@ rule_source = KafkaSource.builder() \
         .set_topics("fraud.rule") \
         .set_group_id("flink-6") \
         .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
-        .set_value_only_deserializer(rule_deserialization_schema) \
+        .set_value_only_deserializer(SchemaControl.get_rule_deserialization()) \
         .build()
 
 # accept records late 10s
@@ -51,7 +44,7 @@ key_transaction_ds = ds_transaction.key_by(lambda record: (record["user_id"], re
 rule_state_desc = MapStateDescriptor(
     "rule",
     Types.STRING(),
-    rule_type_info
+    RULE_TYPE_INFO
 )
 
 rule_broadcast_stream = ds_rule.broadcast(rule_state_desc)
@@ -59,5 +52,17 @@ rule_broadcast_stream = ds_rule.broadcast(rule_state_desc)
 detection_ds = key_transaction_ds.connect(rule_broadcast_stream)\
                                 .process(FraudProcessFunction())
 detection_ds.print()
+
+sink = KafkaSink.builder() \
+    .set_bootstrap_servers(f"{kafka_host}:9091,{kafka_host}:9092,{kafka_host}:9093") \
+    .set_record_serializer(
+        KafkaRecordSerializationSchema.builder()
+            .set_topic("fraud.result")
+            .set_value_serialization_schema(SchemaControl.get_alert_serialization())
+            .build()
+    ) \
+    .set_delivery_guarantee(DeliveryGuarantee.AT_LEAST_ONCE) \
+    .build()
+detection_ds.sink_to(sink)
 
 env.execute("streaming_fraud_detection")
