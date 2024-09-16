@@ -1,0 +1,4 @@
+packaging>=20.0
+pillow>=8
+attrs>=23.2.0
+apache-flink==1.19.1
