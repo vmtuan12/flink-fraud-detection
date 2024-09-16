@@ -1,0 +1,13 @@
+{
+    "namespace": "fraud.transaction",
+    "type": "record",
+    "name": "Transaction",
+    "fields": [
+        {"name": "id", "type": "int", "doc": "id of transaction"},
+        {"name": "user_id",  "type": "int", "doc": "user id"},
+        {"name": "receiver", "type": "int", "doc": "target user id"},
+        {"name": "amount", "type": "float", "doc": "amount of money transfered"},
+        {"name": "created_at", "type": "int", "doc": "transaction created timestamp in second"},
+        {"name": "card_type", "type": "string", "doc": "name of card type"}
+    ]
+}

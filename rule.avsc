@@ -1,0 +1,11 @@
+{
+    "namespace": "fraud.rule",
+    "type": "record",
+    "name": "Rule",
+    "fields": [
+        {"name": "type", "type": "string", "doc": "aggregation type", "default": "AVG"},
+        {"name": "amount", "type": "float", "doc": "amount limit"},
+        {"name": "duration", "type": "int", "doc": "window limit in second"},
+        {"name": "card_type", "type": "string", "doc": "name of card type"}
+    ]
+}
