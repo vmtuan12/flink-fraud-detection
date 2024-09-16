@@ -13,6 +13,7 @@ from schema.schema_controller import SchemaControl, SerializationType, RULE_TYPE
 load_dotenv()
 
 kafka_host = os.getenv('KAFKA_HOST')
+group_name = "group-1"
 
 env = StreamExecutionEnvironment.get_execution_environment()
 env.set_parallelism(1)
@@ -22,7 +23,7 @@ env.set_python_executable("/home/mhtuan/anaconda3/envs/flink-env/bin/python")
 transaction_source = KafkaSource.builder() \
         .set_bootstrap_servers(f"{kafka_host}:9091,{kafka_host}:9092,{kafka_host}:9093") \
         .set_topics("fraud.transaction") \
-        .set_group_id("flink-2") \
+        .set_group_id(group_name) \
         .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.LATEST)) \
         .set_value_only_deserializer(SchemaControl.get_transaction_deserialization()) \
         .build()
@@ -30,13 +31,13 @@ transaction_source = KafkaSource.builder() \
 rule_source = KafkaSource.builder() \
         .set_bootstrap_servers(f"{kafka_host}:9091,{kafka_host}:9092,{kafka_host}:9093") \
         .set_topics("fraud.rule") \
-        .set_group_id("flink-6") \
-        .set_starting_offsets(KafkaOffsetsInitializer.committed_offsets(KafkaOffsetResetStrategy.EARLIEST)) \
+        .set_group_id(group_name) \
+        .set_starting_offsets(KafkaOffsetsInitializer.latest()) \
         .set_value_only_deserializer(SchemaControl.get_rule_deserialization()) \
         .build()
 
 # accept records late 10s
-ds_transaction = env.from_source(transaction_source, WatermarkStrategy.for_monotonous_timestamps().with_idleness(Duration.of_seconds(10)), "Transaction Source")
+ds_transaction = env.from_source(transaction_source, WatermarkStrategy.for_monotonous_timestamps(), "Transaction Source")
 ds_rule = env.from_source(rule_source, WatermarkStrategy.for_monotonous_timestamps().with_idleness(Duration.of_seconds(10)), "Rule Source")
 
 key_transaction_ds = ds_transaction.key_by(lambda record: (record["user_id"], record["card_type"]), key_type=Types.TUPLE([Types.INT(), Types.STRING()]))
