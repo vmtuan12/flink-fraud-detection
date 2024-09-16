@@ -47,7 +47,7 @@ class FraudProcessFunction(KeyedBroadcastProcessFunction):
         
         accumulator = AccumulatorCreator.get_accumulator(type=window_type)
         for event_time in self._window_state.keys():
-            if self._transaction_time_is_valid(transaction_time=event_time, start_time=(current_timestamp-window_duration), current_time=current_timestamp):
+            if self._transaction_time_is_valid(transaction_time=event_time, start_time=(current_timestamp - window_duration), current_time=current_timestamp):
                 transaction_list = self._window_state.get(event_time)
                 [accumulator.add(t["amount"]) for t in transaction_list if t["card_type"] == card_type]
 
@@ -61,14 +61,15 @@ class FraudProcessFunction(KeyedBroadcastProcessFunction):
     # todo
     def on_timer(self, timestamp: int, ctx: KeyedBroadcastProcessFunction.OnTimerContext):
         window = self._window_state
+        events = list(window.keys()).copy()
 
         card_type = ctx.get_current_key()[1]
         rule = ctx.get_broadcast_state(self._rule_state_desc).get(card_type)
-        window_duration = rule["duration"]
+        window_duration = rule["duration"] * 1000
         limit_timestamp = timestamp - window_duration
 
-        for event_time in window.keys():
-            if event_time < limit_timestamp:
+        for event_time in events:
+            if (event_time * 1000) < limit_timestamp:
                 self._window_state.remove(event_time)
 
         yield from []
