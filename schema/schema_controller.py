@@ -29,6 +29,6 @@ class SchemaControl():
     @classmethod    
     def get_alert_serialization(cls, type: int = SerializationType.JSON):
         if type == SerializationType.JSON:
-            return JsonRowSerializationSchema.builder().type_info(type_info=ALERT_TYPE_INFO).build()
+            return JsonRowSerializationSchema.builder().with_type_info(type_info=ALERT_TYPE_INFO).build()
         else:
             return AvroRowSerializationSchema(avro_schema_string=open("schema/avsc/alert.avsc", "r").read())
